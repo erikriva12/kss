@@ -1,0 +1,197 @@
+<div class="main-content">
+    <section class="section">
+        <div class="section-header">
+            <h1>Profile</h1>
+            <div class="section-header-breadcrumb">
+                <div class="breadcrumb-item active"><a href="#">Dashboard</a></div>
+                <div class="breadcrumb-item">Profile</div>
+            </div>
+        </div>
+        <div class="section-body">
+            <h2 class="section-title">Hi,
+                <?= $data->nama ?>
+            </h2>
+
+            <div class="row mt-sm-4">
+                <form action="<?= base_url('user/update') ?>" id="form-user">
+                    <input type="hidden" name="id" value="<?= $data->id ?>">
+                    <div class="card-body">
+                        <div class="row">
+
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label><b>Nama User</b></label>
+                                    <input type="text" class="form-control" placeholder="Contoh : indra" name="nama"
+                                        value="<?= $data->nama ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label><b>Email</b></label>
+                                    <input type="text" class="form-control" placeholder="Contoh : indra@gmail.com"
+                                        name="email" value="<?= $data->email ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label><b>Username</b></label>
+                                    <input type="text" class="form-control" placeholder="Contoh : admin_indra"
+                                        name="username" value="<?= $data->username ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label><b>Password</b></label>
+                                    <input type="password" class="form-control" placeholder="xxx" name="password">
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label><b>Konfirmasi Password</b></label>
+                                    <input type="password" class="form-control" placeholder="xxx"
+                                        name="konfirmasi_password">
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label><b>Foto Profil</b></label>
+                                    <input type="file" class="form-control" onchange="changeFile('foto-profil')"
+                                        id="foto-profil">
+                                    <input type="hidden" name="foto_profil" value="<?= $data->foto_profil ?>"
+                                        id="input-url-foto-profil">
+                                    <div id="res-foto-profil" class="my-1"></div>
+                                    <div id="preview-foto-profil" class="my-1">
+                                        <?php if ($data->foto_profil)
+                                        { ?>
+
+                                            <img src="<?= base_url($data->foto_profil) ?>" class="img-responsive"
+                                                style="height: 150px">
+                                        <?php } ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-whitesmoke">
+                        <div class="text-right">
+                            <div class="btn btn-primary btn-send" onclick="saveUser()"><i class="fas fa-save"></i>
+                                Simpan User
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </section>
+</div>
+<script>
+    function saveUser() {
+        tinymce.triggerSave();
+        Swal.fire({
+            title: '<i class="fa fa-spin fa-spinner"></i>',
+            text: 'Mohon Tunggu Sebentar',
+            showConfirmButton: false,
+            allowOutsideClick: false
+        });
+        var form = $('#form-user');
+        var mydata = new FormData(form[0]);
+        $.ajax({
+            type: "POST",
+            url: form.attr("action"),
+            data: mydata,
+            cache: false,
+            contentType: false,
+            processData: false,
+            beforeSend: function () {
+                $(".btn-send").addClass("disabled").html("<i class='la la-spinner la-spin'></i>  Processing...").attr('disabled', true);
+                form.find(".show_error").slideUp().html("");
+            },
+            success: function (response, textStatus, xhr) {
+                var res = JSON.parse(response);
+                if (res.code == 200) {
+                    let timerInterval
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        html: 'Halaman Akan Segera Diperbarui',
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false,
+                        willClose: () => {
+                            clearInterval(timerInterval)
+                        }
+                    }).then((result) => {
+                        /* Read more about handling dismissals below */
+                        if (result.dismiss === Swal.DismissReason.timer) {
+                            window.location.reload();
+                        }
+                    })
+                }
+                else {
+                    Swal.fire({
+                        title: "Gagal!",
+                        html: res.message,
+                        icon: "error"
+                    });
+                    console.log(res);
+                }
+                console.log(res)
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                console.log(xhr);
+                $(".btn-send").removeClass("disabled").html('<i class="fa fa-save"></i> Save').attr('disabled', false);
+                form.find(".show_error").hide().html(xhr).slideDown("fast");
+            }
+        });
+    }
+    function changeFile(idfile) {
+        var mydata = new FormData();
+        mydata.append('file', $('#' + idfile)[0].files[0]);
+        $.ajax({
+            type: "POST",
+            url: "<?= base_url('produk/upload-file') ?>",
+            data: mydata,
+            cache: false,
+            contentType: false,
+            processData: false,
+            beforeSend: function () {
+                $('#res-' + idfile).html(`<div class="btn btn-warning btn-sm"><i class="fa fa-spin fa-spinner"></i> Tunggu Sebentar</div>`);
+            },
+            success: function (response, textStatus, xhr) {
+                // alert(mydata);
+                var res = JSON.parse(response);
+                console.log('res')
+                if (res.code == 200) {
+                    $('#input-url-' + idfile).val(res.url);
+                    $('#res-' + idfile).html(`
+                        <div class="btn btn-success btn-sm"><i class="fas fa-check"></i> Berhasil</div>
+                    `);
+                    previewImage(idfile, res.url);
+                } else {
+                    $('#res-' + idfile).html('');
+                    Swal.fire({
+                        title: "Gagal!",
+                        html: 'Terjadi kesalahan, coba lagi nanti',
+                        icon: "error"
+                    });
+                    console.log(res);
+                }
+            },
+            error: function (xhr, textStatus, errorThrown) {
+                console.log(xhr.responseText);
+                Swal.fire({
+                    title: "Gagal!",
+                    text: "Gagal Upload File",
+                    icon: "error"
+                });
+                $('#res-' + idfile).html('');
+            }
+        });
+        return false;
+    }
+    function previewImage(idfile, url) {
+        var htmls = `<img src="<?= base_url() ?>` + url + `" class="img-responsive" style="height: 150px;">`;
+        $('#preview-' + idfile).html(htmls);
+    }
+</script>
